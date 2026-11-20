@@ -1,0 +1,94 @@
+@startuml
+skinparam classAttributeIconSize 0
+hide empty members
+
+class Videoclub {
+  id_videoclub : int {PK}
+  nombre_gerente : String
+  ciudad : String
+  calle : String
+  codigo_postal : String {5 caracteres}
+  --
+  guardar() : int
+}
+
+class Pelicula {
+  id_pelicula : int {PK}
+  nombre : String
+  director : String {optional}
+  fecha_estreno : Date
+  precio_alquiler : float
+  --
+  guardar() : int
+}
+
+class Socio {
+  id_socio : int {PK}
+  nombre : String
+  edad : int
+  --
+  guardar() : int
+}
+
+class Alquiler {
+  id_alquiler : int {PK}
+  fecha_recogida : Date
+  fecha_devolucion : Date
+  /total_pagar : float
+  --
+  calcular_total() : float
+  guardar() : int
+  {static} modificar_fecha_devolucion(id_alquiler : int, nueva_fecha : Date, fecha_actual : Date)
+}
+
+class Alquiler_Pelicula <<tabla intermedia>> {
+  id_alquiler : int {PK, FK}
+  id_pelicula : int {PK, FK}
+}
+
+class Estadistica {
+  id_estadistica : int {PK}
+  mes_anio : String
+  fecha_creacion : Date
+  /total_gastado : float
+  --
+  calcular_total_gastado() : float
+  guardar() : int
+}
+
+class Administrador {
+  id_administrador : int {PK}
+  nombre : String
+  --
+  guardar() : int
+  {static} cargar(id_administrador : int) : Administrador
+  generar_estadistica(id_socio : int, mes_anio : String, fecha_creacion : Date) : Estadistica
+}
+
+Videoclub "1" -- "0..*" Pelicula : tiene >
+Socio "1" -- "0..*" Alquiler : realiza >
+Alquiler "0..*" -- "1..*" Pelicula : incluye >
+(Alquiler, Pelicula) .. Alquiler_Pelicula
+Socio "1" -- "0..*" Estadistica : posee >
+Administrador "1" -- "0..*" Estadistica : genera >
+
+note right of Alquiler
+  Fecha de devolución > fecha de recogida.
+  Una fecha de devolución modificada debe ser
+  posterior a la fecha actual.
+  El total se calcula sumando los precios
+  de las películas (película repetida = 1 vez).
+end note
+
+note right of Estadistica
+  Máximo una estadística por socio y mes
+  (UNIQUE id_socio, mes_anio).
+end note
+
+note bottom of Pelicula
+  Cada película pertenece a un único videoclub.
+  precio_alquiler >= 0
+end note
+
+note "Todas las fechas las introduce el usuario por pantalla\n(no se usa la fecha del sistema).\nEn SQLite las fechas se guardan como TEXT (YYYY-MM-DD)\ny los valores derivados (/total_pagar, /total_gastado) se\nalmacenan para conservar el importe histórico." as N1
+@enduml
